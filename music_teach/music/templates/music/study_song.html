@@ -1,0 +1,390 @@
+{% extends 'music/base.html' %}
+
+{% block content %}
+<style>
+    .song-header {
+        margin-bottom: 30px;
+    }
+    
+    .song-header h2 {
+        margin: 0 0 10px 0;
+        color: #1a1a1a;
+        font-size: 28px;
+        font-weight: 500;
+    }
+    
+    .song-artist {
+        color: #666;
+        font-size: 16px;
+    }
+    
+    .content-columns {
+        display: flex;
+        gap: 30px;
+        margin: 30px 0;
+    }
+    
+    .lyrics-column {
+        flex: 1;
+        border-right: 1px solid #e0e0e0;
+        padding-right: 30px;
+        padding-top: 0;
+        margin-top: 0;
+    }
+    
+    .translation-column {
+        flex: 1;
+        padding-left: 0;
+    }
+    
+    .column-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: #1a1a1a;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4a90d9;
+        display: inline-block;
+    }
+    
+    .lyrics-text {
+        font-family: monospace;
+        font-size: 16px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #lyrics-container {
+        padding: 0;
+        margin: 0;
+    }
+    
+    
+    .action-buttons {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .btn-back {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #f0f0f0;
+        color: #333;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-back:hover {
+        background-color: #e0e0e0;
+    }
+    
+    .btn-train {
+        display: inline-block;
+        padding: 8px 20px;
+        background-color: #4a90d9;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-train:hover {
+        background-color: #3a7bc8;
+    }
+    
+    /* Модальное окно */
+    .word-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+    }
+    
+    .modal-content {
+        background: white;
+        margin: 100px auto;
+        padding: 25px;
+        width: 450px;
+        max-width: 90%;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .modal-content h3 {
+        margin: 0 0 10px 0;
+        color: #1a1a1a;
+        font-size: 20px;
+    }
+    
+    .modal-translation {
+        color: #666;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .context-options {
+        margin: 20px 0;
+        text-align: left;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .context-label {
+        display: block;
+        margin: 10px 0;
+        padding: 8px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .context-label:hover {
+        background-color: #e8f0fe;
+    }
+    
+    .context-label input {
+        margin-right: 10px;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+    
+    .btn-add {
+        padding: 8px 20px;
+        background-color: #4a90d9;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-add:hover {
+        background-color: #3a7bc8;
+    }
+    
+    .btn-close-modal {
+        padding: 8px 20px;
+        background-color: #f0f0f0;
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-close-modal:hover {
+        background-color: #e0e0e0;
+    }
+    
+    /* Выделение слов */
+    .vocab-word {
+        background-color: #e3f2fd;
+        cursor: pointer;
+        border-radius: 3px;
+        padding: 0 2px;
+        transition: background-color 0.2s;
+    }
+    
+    .vocab-word:hover {
+        background-color: #4a90d9;
+        color: white;
+    }
+</style>
+
+<div class="song-header">
+    <h2>{{ song.title }}</h2>
+    <div class="song-artist">{{ song.artist }}</div>
+</div>
+
+<div class="content-columns">
+    <div class="lyrics-column">
+        <div class="column-title">Текст песни</div>
+        <div id="lyrics-container" class="lyrics-text">{{ song.lyrics|linebreaksbr }}</div>
+    </div>
+    
+    <div class="translation-column">
+        <div class="column-title">Перевод</div>
+        <div id="translation-container" class="lyrics-text">{{ song.translate|linebreaksbr }}</div>
+    </div>
+</div>
+
+<div class="action-buttons">
+    <a href="{% url 'song_list' %}" class="btn-back">Назад к списку песен</a>
+    <a href="{% url 'train_song' song.id %}" class="btn-train">Тренировка</a>
+</div>
+
+<div id="word-modal" class="word-modal">
+    <div class="modal-content">
+        <h3 id="word-display"></h3>
+        <div id="translation-display" class="modal-translation"></div>
+        <div id="context-options" class="context-options"></div>
+        <div class="modal-buttons">
+            <button onclick="addToVocabulary()" class="btn-add">Добавить в словарь</button>
+            <button onclick="closeWordModal()" class="btn-close-modal">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const vocabulary = {{ vocab|safe }};
+    let currentWord = '';
+    let currentTranslation = '';
+    let selectedContexts = [];
+    
+    // Все строки текста песни
+    const lyricsLines = `{{ song.lyrics }}`.split('\n');
+    
+    function highlightWords() {
+        const container = document.getElementById('lyrics-container');
+        let html = container.innerHTML;
+        
+        const words = Object.keys(vocabulary).sort((a, b) => b.length - a.length);
+        
+        words.forEach(word => {
+            const regex = new RegExp(`\\b(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+            html = html.replace(regex, `<span class="vocab-word" onclick="showWordModal('$1')">$1</span>`);
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    function showWordModal(word) {
+        currentWord = word;
+        currentTranslation = vocabulary[word.toLowerCase()] || 'Перевод не найден';
+        selectedContexts = [];
+        
+        // Находим уникальные строки, содержащие это слово
+        const uniqueContexts = [];
+        for (let line of lyricsLines) {
+            if (line.toLowerCase().includes(word.toLowerCase())) {
+                const trimmedLine = line.trim();
+                if (!uniqueContexts.includes(trimmedLine)) {
+                    uniqueContexts.push(trimmedLine);
+                }
+            }
+        }
+        
+        // Создаем HTML с чекбоксами для выбора контекста
+        let contextsHtml = '<strong>Выберите контекст(ы):</strong>';
+        uniqueContexts.forEach((ctx, idx) => {
+            contextsHtml += `<label class="context-label">
+                <input type="checkbox" value="${idx}" onchange="toggleContext(${idx})">
+                ${ctx}
+            </label>`;
+        });
+        
+        document.getElementById('word-display').textContent = currentWord;
+        document.getElementById('translation-display').textContent = currentTranslation;
+        document.getElementById('context-options').innerHTML = contextsHtml;
+        document.getElementById('word-modal').style.display = 'block';
+        
+        // Сохраняем уникальные контексты в глобальную переменную
+        window.currentContexts = uniqueContexts;
+    }
+    
+    function toggleContext(idx) {
+        const checkbox = event.target;
+        if (checkbox.checked) {
+            selectedContexts.push(window.currentContexts[idx]);
+        } else {
+            selectedContexts = selectedContexts.filter(c => c !== window.currentContexts[idx]);
+        }
+    }
+    
+    function closeWordModal() {
+        document.getElementById('word-modal').style.display = 'none';
+        selectedContexts = [];
+    }
+    
+    function addToVocabulary() {
+        if (selectedContexts.length === 0) {
+            alert('Выберите хотя бы один контекст');
+            return;
+        }
+        
+        const contextText = selectedContexts.join('\n\n');
+        
+        fetch('/music/add-to-vocabulary/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                word: currentWord,
+                translation: currentTranslation,
+                context: contextText,
+                song_title: '{{ song.title }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                alert('Слово добавлено в словарь!');
+                closeWordModal();
+            } else if (data.status === 'exists') {
+                if (confirm('Слово уже есть в словаре. Объединить контексты?')) {
+                    fetch('/music/merge-word-context/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            word: currentWord,
+                            new_context: contextText
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(mergeData => {
+                        if (mergeData.status === 'ok') {
+                            alert('Контекст объединён!');
+                            closeWordModal();
+                        }
+                    });
+                } else {
+                    closeWordModal();
+                }
+            }
+        });
+    }
+    
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+    
+    document.addEventListener('DOMContentLoaded', highlightWords);
+    
+    document.getElementById('word-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeWordModal();
+    });
+</script>
+{% endblock %}

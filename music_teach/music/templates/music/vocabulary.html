@@ -1,0 +1,298 @@
+{% extends 'music/base.html' %}
+
+{% block content %}
+<style>
+    .vocabulary-header {
+        display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    }
+    
+    .vocabulary-header h2 {
+        margin: 0;
+        color: #1a1a1a;
+        font-size: 28px;
+        font-weight: 500;
+    }
+    
+    .btn-export {
+        padding: 8px 20px;
+        background-color: #4a90d9;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-export:hover {
+        background-color: #3a7bc8;
+    }
+    
+    .btn-clear {
+        padding: 8px 20px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+    
+    .btn-clear:hover {
+        background-color: #c82333;
+    }
+    
+    .words-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+    }
+    
+    .words-table th {
+        padding: 12px;
+        text-align: left;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #e0e0e0;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+    
+    .words-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+        color: #333;
+    }
+    
+    .context-cell {
+        max-width: 350px;
+    }
+    
+    .context-line {
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .context-line:last-child {
+        margin-bottom: 0;
+    }
+    
+    .btn-delete {
+        padding: 5px 12px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .btn-delete:hover {
+        background-color: #c82333;
+    }
+    
+    .empty-message {
+        text-align: center;
+        padding: 60px;
+        color: #999;
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        color: #4a90d9;
+        text-decoration: none;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+    
+    /* Модальное окно */
+    .export-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+    }
+    
+    .modal-content {
+        background: white;
+        margin: 200px auto;
+        padding: 25px;
+        width: 400px;
+        border-radius: 8px;
+    }
+    
+    .modal-content h3 {
+        margin: 0 0 20px 0;
+        font-size: 20px;
+    }
+    
+    .modal-content label {
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .modal-content input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .modal-btn-confirm {
+        padding: 8px 20px;
+        background-color: #4a90d9;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .modal-btn-cancel {
+        padding: 8px 20px;
+        background-color: #f0f0f0;
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+</style>
+
+<div class="vocabulary-header">
+    <h2>Мой словарь</h2>
+    <div>
+        <button onclick="showExportModal()" class="btn-export">Экспорт словаря</button>
+        <button onclick="clearVocabulary()" class="btn-clear">Очистить всё</button>
+    </div>
+</div>
+
+{% if words %}
+    <table class="words-table">
+        <thead>
+            <tr>
+                <th>Слово</th>
+                <th>Перевод</th>
+                <th>Контекст</th>
+                <th>Песня</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for word in words %}
+            <tr id="word-row-{{ word.id }}">
+                <td><strong>{{ word.word }}</strong></td>
+                <td>{{ word.translation }}</td>
+                <td class="context-cell">
+                    {% for line in word.context.splitlines %}
+                        <span class="context-line">{{ line }}</span>
+                    {% endfor %}
+                </td>
+                <td>{{ word.song_title }}</td>
+                <td><button onclick="deleteWord({{ word.id }})" class="btn-delete">Удалить</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="empty-message">
+        Словарь пуст. Добавьте слова при изучении песен.
+    </div>
+{% endif %}
+
+<div id="export-modal" class="export-modal">
+    <div class="modal-content">
+        <h3>Экспорт словаря</h3>
+        <label>Название колоды:</label>
+        <input type="text" id="export-name" placeholder="Введите название">
+        <div class="modal-buttons">
+            <button onclick="exportVocabulary()" class="modal-btn-confirm">Экспортировать</button>
+            <button onclick="closeExportModal()" class="modal-btn-cancel">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showExportModal() {
+        document.getElementById('export-modal').style.display = 'block';
+    }
+    
+    function closeExportModal() {
+        document.getElementById('export-modal').style.display = 'none';
+    }
+    
+    function exportVocabulary() {
+        let deckName = document.getElementById('export-name').value.trim();
+        if (!deckName) {
+            alert('Введите название');
+            return;
+        }
+        window.location.href = `/music/export-vocabulary-csv/?deck_name=${encodeURIComponent(deckName)}`;
+        closeExportModal();
+    }
+    
+    function deleteWord(wordId) {
+        if (confirm('Удалить слово?')) {
+            fetch(`/music/delete-word/${wordId}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': getCookie('csrftoken')}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    document.getElementById(`word-row-${wordId}`).remove();
+                }
+            });
+        }
+    }
+    
+    function clearVocabulary() {
+        if (confirm('Очистить весь словарь?')) {
+            fetch('/music/clear-vocabulary/', {
+                method: 'POST',
+                headers: {'X-CSRFToken': getCookie('csrftoken')}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') location.reload();
+            });
+        }
+    }
+    
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie) {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+    
+    document.getElementById('export-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeExportModal();
+    });
+</script>
+{% endblock %}
