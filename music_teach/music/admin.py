@@ -8,7 +8,7 @@ class SongAdmin(admin.ModelAdmin):
     list_filter = ['level', 'created_at']
     search_fields = ['title', 'artist', 'lyrics']
     fieldsets = (
-        ('Основная информация', {
+        ('Основная информация (название, артист, уровень)', {
             'fields': ('title', 'artist', 'level')
         }),
         ('Текст песни', {
